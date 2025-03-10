@@ -1,8 +1,9 @@
-import { dialogueData, scaleFactor } from "./constants";
-import { k } from "./kaboomCtx";
-import { displayDialogue, setCamScale } from "./utils";
+import { dialogueData, scaleFactor } from "../src/constants.js";
+import { k, getAssetUrl } from "../src/kaboomCtx.js";
+import { displayDialogue, setCamScale } from "../src/utils.js";
 
-k.loadSprite("spritesheet", "./spritesheet.png", {
+// Update all asset paths to use BASE_URL
+k.loadSprite("spritesheet", getAssetUrl("spritesheet.png"), {
   sliceX: 39,
   sliceY: 31,
   anims: {
@@ -15,24 +16,52 @@ k.loadSprite("spritesheet", "./spritesheet.png", {
   },
 });
 
-k.loadSprite("map", "./map.png");
+k.loadSprite("map", getAssetUrl("map.png"));
 
 k.setBackground(k.Color.fromHex("#311047"));
 
 k.scene("main", async () => {
-  const mapData = await (await fetch("./map.json")).json();
+  // Update to use BASE_URL
+  const mapData = await (await fetch(getAssetUrl("map.json"))).json();
   const layers = mapData.layers;
 
   const map = k.add([k.sprite("map"), k.pos(0), k.scale(scaleFactor)]);
 
-  const player = k.make([
+  // Create player object but don't add it to the scene yet
+  let playerPos = k.vec2(0, 0); // Default position will be updated
+  let player;
+
+  setTimeout(() => {
+    player.isInDialogue = true;
+    displayDialogue(dialogueData["welcome"], () => {
+      player.isInDialogue = false;
+    });
+  }, 1000);
+
+  // Process layers to find spawnpoint before creating player
+  for (const layer of layers) {
+    if (layer.name === "spawnpoints") {
+      for (const entity of layer.objects) {
+        if (entity.name === "player") {
+          playerPos = k.vec2(
+            (map.pos.x + entity.x) * scaleFactor,
+            (map.pos.y + entity.y) * scaleFactor
+          );
+          break;
+        }
+      }
+    }
+  }
+
+  // Now create and add the player with the correct position
+  player = k.add([
     k.sprite("spritesheet", { anim: "idle-down" }),
     k.area({
       shape: new k.Rect(k.vec2(0, 3), 10, 10),
     }),
     k.body(),
     k.anchor("center"),
-    k.pos(),
+    k.pos(playerPos),
     k.scale(scaleFactor),
     {
       speed: 250,
@@ -42,6 +71,7 @@ k.scene("main", async () => {
     "player",
   ]);
 
+  // Process the boundaries layer
   for (const layer of layers) {
     if (layer.name === "boundaries") {
       for (const boundary of layer.objects) {
@@ -62,21 +92,6 @@ k.scene("main", async () => {
               () => (player.isInDialogue = false)
             );
           });
-        }
-      }
-
-      continue;
-    }
-
-    if (layer.name === "spawnpoints") {
-      for (const entity of layer.objects) {
-        if (entity.name === "player") {
-          player.pos = k.vec2(
-            (map.pos.x + entity.x) * scaleFactor,
-            (map.pos.y + entity.y) * scaleFactor
-          );
-          k.add(player);
-          continue;
         }
       }
     }

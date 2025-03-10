@@ -1,17 +1,17 @@
 {
   "name": "2d-world-portfolio",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "dev": "vite",
     "build": "vite build",
+    "dev": "vite",
     "preview": "vite preview"
   },
-  "devDependencies": {
-    "vite": "^6.2.0"
-  },
-  "dependencies": {
-    "kaboom": "^3000.1.17"
-  }
+    "dependencies": {
+        "kaboom": "^3000.1.17"
+    },
+    "devDependencies": {
+        "vite": "^5.0.12"
+    }
 }
